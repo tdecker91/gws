@@ -5,18 +5,18 @@ This project was created to take the hassle out of setting up a websocket server
 install the gws package `go get github.com/tdecker91/gws`
 
 Create a new socket server and provide a port to listen on and the route to listen 
-```
+```go
   server := gws.NewSocketServer(8080, "/ws")
 ```
 
 Starting the server requires a channel for sending messages to.
-```
+```go
   messages := make(chan gws.Message)
   go server.Start(messages)
 ```
 
 Recieve messages from the channel. Data is received as a byte array, so decode it however you intend it. (json etc...)
-```
+```go
   msg := <-messages
   
   if msg.Type == gws.ClientMessage {
@@ -25,7 +25,7 @@ Recieve messages from the channel. Data is received as a byte array, so decode i
 ```
 
 Send messages to a single client, or broadcase messages to all clients
-```
+```go
   server.BroadcastMessage([]byte{`This will be sent to all clients`})
   server.SendMessage(gws.NewMessage(clientId, []byte{`This will only be sent to a single client`}))
 ```
@@ -33,7 +33,7 @@ Send messages to a single client, or broadcase messages to all clients
 And that's it. If there are any suggestions or issues feel free to contribute, or open an issue on github.
 
 ## Echo Example
-```
+```go
 package main
 
 import (
