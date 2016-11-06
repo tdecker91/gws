@@ -21,7 +21,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-type Client struct {
+type client struct {
 	id  string
 	hub *Hub
 
@@ -36,7 +36,7 @@ type Client struct {
 // The application runs readPump in a routine for each connection.
 // This ensures that there is only one reader on a connection by
 // executing all reads from this goroutine.
-func (c *Client) readPump() {
+func (c *client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -61,7 +61,7 @@ func (c *Client) readPump() {
 // writePump pumps messages from the hub to the websocket connection.
 //
 // a goroutine running writePump is started for each connection.
-func (c *Client) writePump() {
+func (c *client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -109,9 +109,9 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &Client{id: uuid.NewV4().String(), hub: hub, conn: conn, send: make(chan []byte)}
-	client.hub.register <- client
+	c := &client{id: uuid.NewV4().String(), hub: hub, conn: conn, send: make(chan []byte)}
+	c.hub.register <- c
 
-	go client.writePump()
-	client.readPump()
+	go c.writePump()
+	c.readPump()
 }

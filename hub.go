@@ -5,12 +5,12 @@ import (
 )
 
 type Hub struct {
-	clients    map[string]*Client
+	clients    map[string]*client
 	fromClient chan Message
 	toClient   chan Message
 	broadcast  chan []byte
-	register   chan *Client
-	unregister chan *Client
+	register   chan *client
+	unregister chan *client
 }
 
 func newHub() *Hub {
@@ -18,9 +18,9 @@ func newHub() *Hub {
 		fromClient: make(chan Message),
 		toClient:   make(chan Message),
 		broadcast:  make(chan []byte),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		clients:    make(map[string]*Client),
+		register:   make(chan *client),
+		unregister: make(chan *client),
+		clients:    make(map[string]*client),
 	}
 }
 
