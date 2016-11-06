@@ -1,4 +1,4 @@
-package main
+package gws
 
 import (
 	"log"
@@ -12,7 +12,7 @@ type SocketServer struct {
 	hub   *Hub
 }
 
-func newSocketServer(port int, route string) *SocketServer {
+func NewSocketServer(port int, route string) *SocketServer {
 	return &SocketServer{
 		port:  port,
 		route: route,
