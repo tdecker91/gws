@@ -1,23 +1,23 @@
 package main
 
-import (
-	"encoding/json"
+type MessageType int
+
+const (
+	ClientConnected MessageType = iota
+	ClientDisconnected
+	ClientMessage
 )
 
 type Message struct {
-	data interface{}
+	ClientId string
+	Type     MessageType
+	Data     []byte
 }
 
-func parseMessage(rawData []byte) (*Message, error) {
-	m := &Message{
-		data: nil,
+func newMessage(clientId string, mt MessageType, data []byte) *Message {
+	return &Message{
+		ClientId: clientId,
+		Type:     mt,
+		Data:     data,
 	}
-
-	err := json.Unmarshal(rawData, &m.data)
-
-	return m, err
-}
-
-func (m *Message) Compose() ([]byte, error) {
-	return json.Marshal(m.data)
 }

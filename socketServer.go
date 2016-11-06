@@ -4,46 +4,52 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"text/template"
 )
-
-var homeTemplate = template.Must(template.ParseFiles("home.html"))
 
 type SocketServer struct {
 	port  int
 	route string
+	hub   *Hub
 }
 
 func newSocketServer(port int, route string) *SocketServer {
 	return &SocketServer{
 		port:  port,
 		route: route,
+		hub:   nil,
 	}
 }
 
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.Error(w, "Not found", 404)
+func messageHandler(msg interface{}, hub *Hub, fn func(interface{})) {
+	if hub == nil {
+		log.Fatalln("Tried sending a message before starting the socket server")
 		return
 	}
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", 405)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	homeTemplate.Execute(w, r.Host)
+
+	fn(msg)
 }
 
-func (s *SocketServer) start() {
-	hub := newHub()
-	go hub.run()
+func (s *SocketServer) SendMessage(msg Message) {
+	messageHandler(msg, s.hub, func(m interface{}) {
+		s.hub.toClient <- m.(Message)
+	})
+}
 
-	http.HandleFunc("/", serveHome)
+func (s *SocketServer) BroadcastMessage(msg []byte) {
+	messageHandler(msg, s.hub, func(m interface{}) {
+		s.hub.broadcast <- m.([]byte)
+	})
+}
+
+func (s *SocketServer) Start(outbound chan Message) {
+	s.hub = newHub()
+	go s.hub.run(outbound)
+
 	http.HandleFunc(s.route, func(w http.ResponseWriter, r *http.Request) {
-		serveWs(hub, w, r)
+		serveWs(s.hub, w, r)
 	})
 
-	err := http.ListenAndServe(":"+strconv.Itoa(s.port), nil)
+	err := http.ListenAndServe("0.0.0.0:"+strconv.Itoa(s.port), nil)
 	if err != nil {
 		log.Fatal("ListenAndServer: ", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -21,12 +22,13 @@ var upgrader = websocket.Upgrader{
 }
 
 type Client struct {
+	id  string
 	hub *Hub
 
 	conn *websocket.Conn
 
 	// Buffered channel of outbound message
-	send chan Message
+	send chan []byte
 }
 
 // readPump pumps messages from the websocket connection to the hub
@@ -51,14 +53,8 @@ func (c *Client) readPump() {
 			break
 		}
 
-		message, err := parseMessage(rawMessage)
-
-		if err != nil {
-			log.Printf("Error when parsing message from client: \"%v\n\"", err)
-			break
-		}
-		c.hub.inbound <- *message
-		c.hub.broadcast <- *message
+		message := newMessage(c.id, ClientMessage, rawMessage)
+		c.hub.fromClient <- *message
 	}
 }
 
@@ -86,22 +82,12 @@ func (c *Client) writePump() {
 				return
 			}
 
-			rawMessage, err := message.Compose()
-			if err != nil {
-				return
-			}
-
-			w.Write(rawMessage)
+			w.Write(message)
 
 			// Add queued messages to the current websocket message
 			n := len(c.send)
 			for i := 0; i < n; i++ {
-				m := <-c.send
-				rawMessage, err := m.Compose()
-				if err != nil {
-					return
-				}
-				w.Write(rawMessage)
+				w.Write(<-c.send)
 			}
 
 			if err := w.Close(); err != nil {
@@ -123,7 +109,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &Client{hub: hub, conn: conn, send: make(chan Message)}
+	client := &Client{id: uuid.NewV4().String(), hub: hub, conn: conn, send: make(chan []byte)}
 	client.hub.register <- client
 
 	go client.writePump()
