@@ -15,10 +15,22 @@ Starting the server requires a channel for sending messages to.
   go server.Start(messages)
 ```
 
-Recieve messages from the channel
+Recieve messages from the channel. Data is received as a byte array, so decode it however you intend it. (json etc...)
 ```
   msg := <-messages
+  
+  if msg.Type == gws.ClientMessage {
+  	fmt.Printf("Received Message from client %s: %v\n", msg.ClientId, msg.Data)
+  }
 ```
+
+Send messages to a single client, or broadcase messages to all clients
+```
+  server.BroadcastMessage([]byte{`This will be sent to all clients`})
+  server.SendMessage(gws.NewMessage(clientId, []byte{`This will only be sent to a single client`}))
+```
+
+And that's it. If there are any suggestions or issues feel free to contribute, or open an issue on github.
 
 ## Echo Example
 ```
@@ -49,11 +61,11 @@ func main() {
 
 		switch t := m.Type; t {
 		case gws.ClientConnected:
-			log.Printf("Client connected %v\n", m.ClientId)
+			log.Printf("Client connected %s\n", m.ClientId)
 		case gws.ClientDisconnected:
-			log.Printf("Client disconnected %v", m.ClientId)
+			log.Printf("Client disconnected %s", m.ClientId)
 		case gws.ClientMessage:
-			log.Printf("Client message received %v", m.Data)
+			log.Printf("Client message received\n\tClient: t%s\n\tMessage: %v", m.ClientId, m.Data)
 			server.SendMessage(m)
 		}
 	}
