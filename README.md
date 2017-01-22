@@ -24,7 +24,7 @@ Recieve messages from the channel. Data is received as a byte array, so decode i
   }
 ```
 
-Send messages to a single client, or broadcase messages to all clients
+Send messages to a single client, or broadcast messages to all clients
 ```go
   server.BroadcastMessage([]byte{`This will be sent to all clients`})
   server.SendMessage(gws.NewMessage(clientId, []byte{`This will only be sent to a single client`}))
